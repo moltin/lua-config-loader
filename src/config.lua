@@ -1,14 +1,21 @@
 --- Parse a config file into table variables for configuration
--- @module config
--- @author Moltin Ltd
+-- @author Israel Sotomayor israel@moltin.com
 
-local config = {}
-local params = {}
+local Config = {}
+Config.__index = Config
+
+setmetatable(Config, {
+    __call = function (cls, ...)
+        return cls.new(...)
+    end,
+})
 
 --- Parse a file for some config variables
 -- @param path string The path of the conifg file to parse
 -- @return table connection parameters
-function config.parse(path)
+function Config:parse(path)
+    local params = {}
+
     -- Open file
     fp = io.open(path, "r" )
 
@@ -40,15 +47,20 @@ end
 
 --- Load environment variables
 -- @return table connection parameters
-function config.loadEnvironmentVariables()
-    params['oauth2_ip'] = os.getenv("OAUTH2_IP")
-    params['oauth2_port'] = os.getenv("OAUTH2_PORT")
-    params['postgres_ip'] = os.getenv("POSTGRES_IP")
-    params['postgres_port'] = os.getenv("POSTGRES_PORT")
-    params['postgres_database'] = os.getenv("POSTGRES_DATABASE")
-    params['postgres_user'] = os.getenv("POSTGRES_USER")
-    params['postgres_password'] = os.getenv("POSTGRES_PASSWORD")
+function Config:loadEnvironmentVariables(variables)
+    local params = {}
+    if variables then
+        for _, v in pairs(variables) do
+            params[string.lower(v)] = os.getenv(v)
+        end
+    end
     return params
 end
 
-return config
+function Config.new()
+    local instance = {}
+    setmetatable(instance, Config)
+    return instance
+end
+
+return Config
